@@ -88,7 +88,7 @@ export function ModernTemplate() {
       // Validate data before setting
       if (!data) {
         throw new Error('No portfolio data received');
-      }
+      } 
   
       setPortfolioData(data);
       return data;

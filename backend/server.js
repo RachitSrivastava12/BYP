@@ -64,10 +64,28 @@ const Client = mongoose.model('Client', {
 });
 
 // Portfolio model
+// const Portfolio = mongoose.model('Portfolio', {
+//   userId: mongoose.Schema.Types.ObjectId,
+//   data: Object,
+//   deployUrl: String,
+// });
+
+
+
+
 const Portfolio = mongoose.model('Portfolio', {
-  userId: mongoose.Schema.Types.ObjectId,
-  data: Object,
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    ref: 'Client'
+  },
+  data: {
+    type: Object,
+    required: true
+  },
   deployUrl: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
 });
 
 console.log("cors has been used");
@@ -124,6 +142,18 @@ const generateStaticFiles = async (portfolioData, buildDir) => {
   fs.writeFileSync(path.join(buildDir, 'styles.css'), generateStyles(portfolioData));
 };
 
+
+
+
+
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+})
 
 // User registration
 app.post('/api/register', async (req, res) => {
