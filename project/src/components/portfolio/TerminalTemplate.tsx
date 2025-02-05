@@ -6,7 +6,7 @@ import { Circle } from 'lucide-react';
 import { PortfolioData } from '../../types/portfolio';
 import Loader from './Loader';
 
-const API = "http://localhost:3000";
+const API = "https://byp-1.onrender.com";
 
 type CommandOutput = React.ReactNode | void;
 type Commands = {
@@ -55,20 +55,32 @@ export function TerminalTemplate() {
       const token = localStorage.getItem('token');
       const userId = localStorage.getItem('userId');
       
+      // Show initial status to user
+      alert('Starting portfolio deployment...');
+      
       const response = await fetch(`${API}/api/portfolio/${userId}/deploy`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
-        },
+          'Content-Type': 'application/json'
+        }
       });
-
+  
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
+  
       const data = await response.json();
-      console.log('Deployment successful:', data.url);
-      alert(`Your portfolio has been deployed! Visit: ${data.url}`);
+      
+      // Show success message with the URL
+      const deployMessage = `Portfolio deployed successfully!\n\nVisit your portfolio at: ${data.url}`;
+      alert(deployMessage);
+      
+      // Optionally open the portfolio in a new tab
+      if (confirm('Would you like to open your portfolio in a new tab?')) {
+        window.open(data.url, '_blank');
+      }
+  
     } catch (error) {
       console.error('Error deploying portfolio:', error);
       alert('Failed to deploy portfolio. Please try again.');

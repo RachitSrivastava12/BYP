@@ -7,7 +7,7 @@ import { SkillsSection } from './sections/SkillsSection';
 import { EducationSection } from './sections/EducationSection';
 import { TemplateSelector } from './TemplateSelector';
 
-const API = "http://localhost:3000";
+const API = "https://byp-1.onrender.com";
 
 
 export function PortfolioForm() {

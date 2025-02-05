@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, UserPlus } from 'lucide-react';
 
-const API = "http://localhost:3000";
+const API = "https://byp-1.onrender.com";
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
