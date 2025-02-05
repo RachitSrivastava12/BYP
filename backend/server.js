@@ -6,7 +6,10 @@ const cors = require('cors');
 const { exec } = require('child_process');
 const path = require('path');
 const app = express();
-const { PORT,MONGODB_URI} = require('./config');
+const { PORT,MONGODB_URI
+,VERCEL_ACCESS_TOKEN,
+VERCEL_PROJECT_ID
+} = require('./config.js');
 const { createDeployment } = require('@vercel/client');
 
 // app.use(cors({
@@ -227,7 +230,6 @@ app.post('/api/portfolio/:id/deploy', authenticateToken, async (req, res) => {
     const vercelConfig = {
       token: process.env.VERCEL_ACCESS_TOKEN,
       projectId: process.env.VERCEL_PROJECT_ID,
-      teamId: process.env.VERCEL_TEAM_ID // Optional, if deploying under a team
     };
 
     // Create deployment using Vercel API
