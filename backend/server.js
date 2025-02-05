@@ -7,7 +7,7 @@ const { exec } = require('child_process');
 const path = require('path');
 const app = express();
 const { PORT,MONGODB_URI} = require('./config');
-
+const { createDeployment } = require('@vercel/client');
 
 // app.use(cors({
 //   origin: ' http://localhost:5173/', // Be more specific in production
@@ -186,6 +186,28 @@ app.get('/api/portfolio', authenticateToken, async (req, res) => {
   }
 });
 
+async function getFilesFromDirectory(dir) {
+  const files = [];
+  const items = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const item of items) {
+    const fullPath = path.join(dir, item.name);
+    
+    if (item.isDirectory()) {
+      files.push(...await getFilesFromDirectory(fullPath));
+    } else {
+      const file = {
+        file: item.name,
+        data: fs.readFileSync(fullPath),
+        encoding: 'base64'
+      };
+      files.push(file);
+    }
+  }
+
+  return files;
+}
+
 app.post('/api/portfolio/:id/deploy', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -195,41 +217,52 @@ app.post('/api/portfolio/:id/deploy', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Portfolio not found' });
     }
 
-    // Create a temporary directory for the build
+    // Create temporary directory for the build
     const buildDir = path.join(__dirname, 'temp', userId);
-
-    // Generate static files based on the portfolio data
+    
+    // Generate static files based on portfolio data
     await generateStaticFiles(portfolio.data, buildDir);
 
-    // Deploy to Netlify using their CLI
-    exec(`netlify deploy --dir ${buildDir} --prod`, async (error, stdout, stderr) => {
-      if (error) {
-        console.error('Deployment error:', error);
-        return res.status(500).json({ message: 'Deployment failed' });
-      }
+    // Configure Vercel deployment
+    const vercelConfig = {
+      token: process.env.VERCEL_ACCESS_TOKEN,
+      projectId: process.env.VERCEL_PROJECT_ID,
+      teamId: process.env.VERCEL_TEAM_ID // Optional, if deploying under a team
+    };
 
-      try {
-        // Extract the deployment URL from Netlify output
-        const deployUrl = stdout.match(/Website URL: (https:\/\/.+)/)[1];
-
-        // Save the deployment URL to the portfolio document
-        portfolio.deployUrl = deployUrl;
-        await portfolio.save();
-
-        // Clean up the temporary directory
-        fs.rmSync(buildDir, { recursive: true, force: true });
-
-        res.json({ url: deployUrl });
-      } catch (saveError) {
-        console.error('Error saving deploy URL:', saveError);
-        res.status(500).json({ message: 'Deployment succeeded but failed to save URL' });
-      }
+    // Create deployment using Vercel API
+    const deployment = await createDeployment({
+      token: vercelConfig.token,
+      project: vercelConfig.projectId,
+      files: await getFilesFromDirectory(buildDir),
+      builds: [
+        {
+          src: '**/*',
+          use: '@vercel/static'
+        }
+      ]
     });
+
+    // Wait for deployment to complete
+    const deployUrl = `https://${deployment.url}`;
+    
+    // Save deployment URL to portfolio
+    portfolio.deployUrl = deployUrl;
+    await portfolio.save();
+
+    // Clean up temporary directory
+    fs.rmSync(buildDir, { recursive: true, force: true });
+
+    res.json({ url: deployUrl });
+
   } catch (error) {
     console.error('Server error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ 
+      message: 'Deployment failed', 
+      error: error.message 
+    });
   }
-});
+}); 
 // app.post('/api/portfolio/:id/deploy', authenticateToken, async (req, res) => {
 //   try {
 //     const userId = req.user.userId;
