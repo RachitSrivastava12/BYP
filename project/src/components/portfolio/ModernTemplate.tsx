@@ -27,26 +27,78 @@ export function ModernTemplate() {
   //     console.error('Error fetching portfolio:', error);
   //   }
   // };
+  // const fetchPortfolio = async () => {
+  //   try {
+  //     const token = localStorage.getItem('token');
+  //     const userId = localStorage.getItem('userId'); // Get userId from localStorage
+      
+  //     const response = await fetch(`${API}/api/portfolio`, {  // Remove the :id
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+      
+  //     const data = await response.json();
+  //     setPortfolioData(data);
+  //     console.log('Fetched portfolio:', data); // Add this for debugging
+  //   } catch (error) {
+  //     console.error('Error fetching portfolio:', error);
+  //   }
+  // };
+
   const fetchPortfolio = async () => {
     try {
       const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId'); // Get userId from localStorage
-      
-      const response = await fetch(`${API}/api/portfolio`, {  // Remove the :id
+      const userId = localStorage.getItem('userId');
+  
+      // Validate token and userId exist
+      if (!token || !userId) {
+        console.error('Missing token or userId');
+        throw new Error('Please log in again');
+      }
+  
+      console.log('Attempting to fetch portfolio for userId:', userId);
+  
+      const response = await fetch(`${API}/api/portfolio`, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        credentials: 'include' // Include this if your backend uses cookies
       });
   
+      // Log response status for debugging
+      console.log('Response status:', response.status);
+  
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Try to get error message from response
+        const errorData = await response.json().catch(() => null);
+        console.error('Response error:', errorData);
+        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
       }
-      
+  
       const data = await response.json();
+      console.log('Fetched portfolio data:', data);
+  
+      // Validate data before setting
+      if (!data) {
+        throw new Error('No portfolio data received');
+      }
+  
       setPortfolioData(data);
-      console.log('Fetched portfolio:', data); // Add this for debugging
-    } catch (error) {
+      return data;
+  
+    } catch (error: any) {
       console.error('Error fetching portfolio:', error);
+      // You might want to show an error message to the user here
+      // For example, using an alert or a toast notification
+      alert(`Failed to load portfolio: ${error.message}`);
+      return null;
     }
   };
 

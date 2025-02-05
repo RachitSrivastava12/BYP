@@ -171,23 +171,83 @@ app.post('/api/portfolio', authenticateToken, async (req, res) => {
 //   }
 // });
 
-app.get('/api/portfolio', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    console.log('Fetching portfolio for userId:', userId); // Debug log
-    
-    const portfolio = await Portfolio.findOne({ userId });
-    console.log('Found portfolio:', portfolio); // Debug log
-    
-    if (!portfolio) {
-      return res.status(404).json({ message: 'Portfolio not found' });
+  // app.get('/api/portfolio', authenticateToken, async (req, res) => {
+  //   try {
+  //     const userId = req.user.userId;
+  //     console.log('Fetching portfolio for userId:', userId); // Debug log
+      
+  //     const portfolio = await Portfolio.findOne({ userId });
+  //     console.log('Found portfolio:', portfolio); // Debug log
+      
+  //     if (!portfolio) {
+  //       return res.status(404).json({ message: 'Portfolio not found' });
+  //     }
+  //     res.json(portfolio.data);
+  //   } catch (error) {
+  //     console.error('Server error:', error); // More detailed error logging
+  //     res.status(500).json({ message: 'Server error', error: error.message });
+  //   }
+  // });
+
+
+  app.get('/api/portfolio', authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user.userId;
+      
+      // Validate userId
+      if (!userId) {
+        console.error('No userId provided in request');
+        return res.status(400).json({ message: 'UserId is required' });
+      }
+      
+      console.log('Attempting to fetch portfolio for userId:', userId);
+  
+      // Check MongoDB connection
+      if (mongoose.connection.readyState !== 1) {
+        console.error('MongoDB connection is not ready');
+        return res.status(500).json({ message: 'Database connection error' });
+      }
+  
+      // Fetch portfolio with error handling
+      let portfolio;
+      try {
+        portfolio = await Portfolio.findOne({ userId });
+        console.log('Database query completed');
+      } catch (dbError) {
+        console.error('Database query error:', dbError);
+        return res.status(500).json({ message: 'Database query failed', error: dbError.message });
+      }
+  
+      // Log the found portfolio (but sanitize sensitive data)
+      console.log('Portfolio found:', portfolio ? 'Yes' : 'No');
+      
+      if (!portfolio) {
+        console.log(`No portfolio found for userId: ${userId}`);
+        return res.status(404).json({ message: 'Portfolio not found' });
+      }
+  
+      // Validate portfolio data
+      if (!portfolio.data) {
+        console.error(`Portfolio found but no data for userId: ${userId}`);
+        return res.status(404).json({ message: 'Portfolio data is empty' });
+      }
+  
+      // Set proper headers
+      res.setHeader('Content-Type', 'application/json');
+      
+      // Send response
+      res.json(portfolio.data);
+  
+    } catch (error) {
+      console.error('Unexpected server error:', error);
+      console.error('Error stack:', error.stack);
+      res.status(500).json({ 
+        message: 'Server error', 
+        error: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
     }
-    res.json(portfolio.data);
-  } catch (error) {
-    console.error('Server error:', error); // More detailed error logging
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-});
+  });
 
 async function getFilesFromDirectory(dir) {
   const files = [];
