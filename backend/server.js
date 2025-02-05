@@ -12,26 +12,49 @@ VERCEL_PROJECT_ID
 } = require('./config.js');
 const { createDeployment } = require('@vercel/client');
 
+const corsOptions = {
+  origin: ['https://your-vercel-frontend-domain.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 // app.use(cors({
 //   origin: ' http://localhost:5173/', // Be more specific in production
 //   methods: ['GET', 'POST', 'PUT', 'DELETE'],
 //   allowedHeaders: ['Content-Type', 'Authorization']
 // }));
 
+
+app.use(cors(corsOptions));
 app.use(express.json());
-app.use(cors());
+
+app.options('*', cors(corsOptions));
 
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log('Connected to MongoDB');
-}).catch((err) => {
-  console.error('Error connecting to MongoDB:', err);
-});
+// mongoose.connect(process.env.MONGODB_URI, {
+//   useNewUrlParser: true,
+//   useUnifiedTopology: true,
+// }).then(() => {
+//   console.log('Connected to MongoDB');
+// }).catch((err) => {
+//   console.error('Error connecting to MongoDB:', err);
+// });
 
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((err) => {
+    console.error('MongoDB connection error:', err);
+    // Don't exit the process, but log the error
+    console.error('Server will continue running and retry connection');
+  });
+
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB error:', err);
+});
 
 
 // User model
@@ -47,6 +70,15 @@ const Portfolio = mongoose.model('Portfolio', {
   deployUrl: String,
 });
 
+console.log("cors has been used");
+
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
 
 // Authentication Middleware
 const authenticateToken = (req, res, next) => {
@@ -360,6 +392,14 @@ app.post('/api/portfolio/:id/deploy', authenticateToken, async (req, res) => {
 //     res.status(500).json({ message: 'Server error', error: error.message });
 //   }
 // });
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    message: 'Something broke!',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+  });
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
