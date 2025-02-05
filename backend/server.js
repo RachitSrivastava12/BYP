@@ -142,7 +142,7 @@ app.post('/api/portfolio', authenticateToken, async (req, res) => {
   try {
     const { data } = req.body;
     const userId = req.user.userId;
-
+    console.log(data);
     // Find and update or create new portfolio
     await Portfolio.findOneAndUpdate(
       { userId },
