@@ -250,7 +250,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Github, Linkedin, Twitter, Globe, Mail, MapPin, ArrowLeft, FileText } from 'lucide-react';
 import { PortfolioData } from '../../types/portfolio';
-const { createDeployment } = require('@vercel/client');
+
 
 const API = "https://byp-1.onrender.com";
 
