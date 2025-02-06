@@ -13,7 +13,7 @@ VERCEL_PROJECT_ID
 const { createDeployment } = require('@vercel/client');
 
 const corsOptions = {
-  origin: ['https://your-vercel-frontend-domain.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
+  origin: ['https://byp-zeta.vercel.app', 'http://localhost:5173', 'http://localhost:3000'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
